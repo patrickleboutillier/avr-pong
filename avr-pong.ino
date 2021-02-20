@@ -1,52 +1,48 @@
+/*
 
-extern "C" void _setup() ;
-extern "C" void _loop() ;
 
 // Not sure why this is required...
 // volatile uint8_t xxx = 15 ;
+
 
 void setup(){
   Serial.begin(9600) ;
   _setup() ;
 }
 
+
 void loop(){
   _loop() ;
 
-  delay(50) ;
+  // delayms(50) ;
 }
 
 
-/*
-extern "C" {
-  void refresh(){
-    byte r24, r22 ;
-    byte r20 = 0 ;
+void refresh(){
+  byte r24, r22 ;
+  byte r20 = 0 ;
 loop:
-    if (r20 < 8){
-      // digitalWrite(CS_PIN, 0) ;
-      r24 = PORTB ;
-      r24 = r24 & 0b11111011 ;
-      PORTB = r24 ;
-      r24 = r20 ;
-      r22 = 0 ;
-      send_row(r24, r22) ;
-      r24 = r20 ;
-      r22 = 8 ;
-      send_row(r24, r22) ;
-      digitalWrite(CS_PIN, 1) ;
-      r24 = PORTB ;
-      r24 = r24 | 0b00000100 ;
-      PORTB = r24 ;
-      r20 = r20 + 1 ;
-      goto loop ;
-    }
+  if (r20 < 8){
+    // digitalWrite(CS_PIN, 0) ;
+    r24 = PORTB ;
+    r24 = r24 & 0b11111011 ;
+    PORTB = r24 ;
+    r24 = r20 ;
+    r22 = 0 ;
+    send_row(r24, r22) ;
+    r24 = r20 ;
+    r22 = 8 ;
+    send_row(r24, r22) ;
+    digitalWrite(CS_PIN, 1) ;
+    r24 = PORTB ;
+    r24 = r24 | 0b00000100 ;
+    PORTB = r24 ;
+    r20 = r20 + 1 ;
+    goto loop ;
   }
 }
-*/
 
 
-/*
 void send_row(byte r24, byte r22){
   byte r26 = r24 ;
   byte r27 = r22 ;
