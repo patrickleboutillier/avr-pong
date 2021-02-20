@@ -1,43 +1,8 @@
-#define CS_PIN    10
-
-extern "C" void _setup() ;
-extern "C" void _loop() ;
-extern "C" void spi_transfer(byte) ;
-extern "C" void send_row(byte, byte) ;
-extern "C" byte handle_moves() ;
-extern "C" byte handle_player_move() ;
-extern "C" byte handle_computer_move(byte) ;
-extern "C" byte button_up_pushed() ;
-extern "C" byte button_down_pushed() ;
-extern "C" void paddle_up(byte) ;
-extern "C" void paddle_down(byte) ;
-extern "C" byte handle_ball_x_move() ;
-extern "C" byte handle_ball_y_move() ;
-extern "C" byte handle_paddle_contact(byte, byte) ;
-extern "C" byte paddle_contact(byte, byte) ;
-extern "C" void erase_ball(void) ;
-extern "C" void draw_ball(void) ;
-extern "C" byte shiftln(byte, byte) ;
-extern "C" byte shiftrn(byte, byte) ;
-
-extern "C" byte button_up_state ;
-extern "C" byte button_down_state ;
-
-extern "C" byte buffer[16] ;
-extern "C" byte ball_x ;
-extern "C" byte ball_y ;
-extern "C" byte ball_xdir ;
-extern "C" byte ball_ydir ;
-extern "C" byte ball_xspeed ;
-extern "C" byte ball_yspeed ;
-
-extern "C" byte display_ball ;
-extern "C" byte game_over ;
-extern "C" byte nbloop ;
+/*
 
 
 // Not sure why this is required...
-volatile uint8_t xxx = 15 ;
+// volatile uint8_t xxx = 15 ;
 
 
 void setup(){
@@ -49,29 +14,35 @@ void setup(){
 void loop(){
   _loop() ;
 
-  delay(50) ;
+  // delayms(50) ;
 }
 
 
-extern "C" {
-  void refresh(){
-    for (byte row = 0 ; row < 8 ; row++){
-        digitalWrite(CS_PIN, LOW) ;
-        send_row(row, 0) ;
-        send_row(row, 8) ;
-        digitalWrite(CS_PIN, HIGH) ;
-
-        //Serial.print(row) ;
-        //Serial.print(" ") ;
-        //Serial.print(val1, BIN) ;
-        //Serial.print(" ") ;
-        //Serial.println(val2, BIN) ;
-    }
+void refresh(){
+  byte r24, r22 ;
+  byte r20 = 0 ;
+loop:
+  if (r20 < 8){
+    // digitalWrite(CS_PIN, 0) ;
+    r24 = PORTB ;
+    r24 = r24 & 0b11111011 ;
+    PORTB = r24 ;
+    r24 = r20 ;
+    r22 = 0 ;
+    send_row(r24, r22) ;
+    r24 = r20 ;
+    r22 = 8 ;
+    send_row(r24, r22) ;
+    digitalWrite(CS_PIN, 1) ;
+    r24 = PORTB ;
+    r24 = r24 | 0b00000100 ;
+    PORTB = r24 ;
+    r20 = r20 + 1 ;
+    goto loop ;
   }
 }
 
 
-/*
 void send_row(byte r24, byte r22){
   byte r26 = r24 ;
   byte r27 = r22 ;

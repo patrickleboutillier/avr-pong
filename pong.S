@@ -1,47 +1,71 @@
 ; Write your code in this file
+
 #include <avr/io.h>
 
-#define SPEED_MASK 0b00000011
+#define SPEED_MASK  0b00000011
+#define DELAY       50
 
-  .section .data
-  .global buffer
+
+.section .data
+
+
 buffer:
   .byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-  .global ball_x
 ball_x:
-  .byte 7
-  .global ball_y
+  .byte 0
 ball_y:
-  .byte 3
-  .global ball_xdir
+  .byte 0
 ball_xdir:
-  .byte 1
-  .global ball_ydir
+  .byte 0
 ball_ydir:
-  .byte 1
-  .global display_ball
+  .byte 0
 display_ball:
-  .byte 255
-  .global game_over 
+  .byte 0 
 game_over:
   .byte 0
-  .global button_up_state
 button_up_state:
-  .byte 1
-  .global button_down_state
+  .byte 0
 button_down_state:
-  .byte 1
-  .global nbloop
+  .byte 0
 nbloop:
   .byte 0
 
 
 .section .text
 
-.extern refresh 
 
-.global _setup
-_setup:
+.global main
+main:
+  call init_globals
+  call setup
+1:
+  call loop
+  rjmp 1b
+
+
+init_globals:
+  ldi r24, 7
+  sts ball_x, r24
+  ldi r24, 3
+  sts ball_y, r24
+  ldi r24, 1
+  sts ball_xdir, r24
+  ldi r24, 1
+  sts ball_ydir, r24
+  ldi r24, 255
+  sts display_ball, r24
+  ldi r24, 0
+  sts game_over, r24
+  ldi r24, 1
+  sts button_up_state, r24
+  ldi r24, 1
+  sts button_down_state, r24
+  ldi r24, 0
+  sts nbloop, r24
+  ret
+
+
+setup:
   // SPI.begin()
   ldi r24, 0b00000100
   out _SFR_IO_ADDR(PORTB), r24
@@ -73,9 +97,8 @@ _setup:
   ret
 
 
-; void _loop()
-  .global _loop
-_loop:
+; void loop()
+loop:
   call erase_ball
 
   lds r24, game_over
@@ -99,11 +122,44 @@ _loop:
   lds r24, nbloop
   inc r24
   sts nbloop, r24
+ 
+  ldi r24, DELAY
+  call delayms
   ret
 
 
+; void refresh(){
+refresh:
+  ldi r20, 0 
+1:
+  cpi r20, 8 
+  brge 2f
+    // digitalWrite(CS_PIN, 0) ;
+    in r24, _SFR_IO_ADDR(PORTB)
+    andi r24, 0b11111011
+    out _SFR_IO_ADDR(PORTB), r24
+    mov r24, r20
+    ldi r22, 0
+    push r20
+    call send_row
+    pop r20
+    mov r24, r20
+    ldi r22, 8
+    push r20
+    call send_row
+    pop r20
+    // digitalWrite(CS_PIN, 1) ;
+    in r24, _SFR_IO_ADDR(PORTB)
+    ori r24, 0b00000100
+    out _SFR_IO_ADDR(PORTB), r24
+    inc r20 
+    rjmp 1b
+2:
+  ret
+
+
+
 ; void send_row(byte r24, byte r22)
-  .global send_row
 send_row:
   mov r26, r24
   mov r27, r22
@@ -141,7 +197,6 @@ send_row:
 
 
 ; void spi_transfer(byte r24){
-  .global spi_transfer
 spi_transfer:
   out _SFR_IO_ADDR(SPDR), r24
   nop
@@ -153,7 +208,6 @@ spi_transfer:
 
 
 ; byte handle_moves(){
-  .global handle_moves
 handle_moves:
   call handle_player_move
   lds r18, ball_x 
@@ -205,7 +259,6 @@ handle_moves:
 
 
 ; void handle_player_move()
-  .global handle_player_move
 handle_player_move:
   call button_up_pushed
   cpi r24, 0
@@ -224,7 +277,6 @@ handle_player_move:
 
 
 ; void handle_computer_move(byte r24)
-  .global handle_computer_move
 handle_computer_move:
   lds r22, ball_y 
   ; if (r22 < r24){
@@ -244,7 +296,6 @@ handle_computer_move:
 
 
 ; byte handle_ball_x_move
-  .global handle_ball_x_move
 handle_ball_x_move:
   lds r24, ball_x
   lds r22, ball_xdir
@@ -262,7 +313,6 @@ handle_ball_x_move:
 
 
 ; byte handle_ball_y_move
-  .global handle_ball_y_move
 handle_ball_y_move:
   lds r24, ball_y
   lds r22, ball_ydir
@@ -283,7 +333,6 @@ handle_ball_y_move:
 
 
 ; byte handle_paddle_contact(byte r24, byte r22)
-  .global handle_paddle_contact
 handle_paddle_contact:
   push r24
   push r22
@@ -308,7 +357,6 @@ handle_paddle_contact:
 
 
 ; byte paddle_contact(byte r24, byte r22)
-  .global paddle_contact
 paddle_contact:
   cpi r24, 0
   brne 1f
@@ -339,8 +387,6 @@ paddle_contact:
 
 
 ; byte button_up_pushed()
-; ret: r24
-  .global button_up_pushed
 button_up_pushed:
   ; if (digitalRead(7) == 0){
   in r24, 0x09           ; PIND
@@ -364,7 +410,6 @@ button_up_pushed:
 
 ; byte button_down_pushed()
 ; ret: r24
-  .global button_down_pushed
 button_down_pushed:
   ; if (digitalRead(6) == 0){
   in r24, 0x09           ; PIND
@@ -388,7 +433,6 @@ button_down_pushed:
 
 ; void paddle_up(byte x)
 ; x: r24
-.global paddle_up
 paddle_up:
   ldi r30, lo8(buffer)  ; load Z = address of buffer
   ldi r31, hi8(buffer)  ; ...high byte also
@@ -406,7 +450,6 @@ paddle_up:
 
 ; void paddle_down(byte x)
 ; x: r24
-.global paddle_down
 paddle_down:
   ldi r30, lo8(buffer)  ; load Z = address of buffer
   ldi r31, hi8(buffer)  ; ...high byte also
@@ -423,7 +466,6 @@ paddle_down:
 
 
 ; void erase_ball()
-.global erase_ball
 erase_ball:
   ldi r24, 1
   lds r22, ball_y
@@ -442,7 +484,6 @@ erase_ball:
 
 
 ; void draw_ball()
-.global draw_ball
 draw_ball:
   lds r24, display_ball
   tst r24
@@ -464,8 +505,7 @@ draw_ball:
 
 
 ; byte shiftln(byte v, byte n)
-; v: r24, n: r22, ret: r24
-.global shiftln  
+; v: r24, n: r22, ret: r24 
 shiftln:
   and r22, r22
   breq 1f
@@ -478,7 +518,6 @@ shiftln:
 
 ; byte shiftrn(byte v, byte n)
 ; v: r24, n: r22, ret: r24
-.global shiftrn  
 shiftrn:
   and r22, r22
   breq 1f
@@ -486,4 +525,21 @@ shiftrn:
     subi r22, 1
     rjmp shiftrn
 1:
+  ret
+
+
+delay1ms:
+  ldi r30, lo8(4000)
+  ldi r31, hi8(4000)
+1:
+  sbiw r30, 1
+  brne 1b
+  ret
+
+
+  .global delayms
+delayms:
+  call delay1ms
+  sbiw r24, 1
+  brne delayms
   ret
