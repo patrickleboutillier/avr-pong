@@ -1,4 +1,5 @@
 ; Write your code in this file
+
 #include <avr/io.h>
 
 #define SPEED_MASK 0b00000011
@@ -38,7 +39,6 @@ nbloop:
 
 .section .text
 
-.extern refresh 
 
 .global _setup
 _setup:
@@ -100,6 +100,38 @@ _loop:
   inc r24
   sts nbloop, r24
   ret
+
+
+; void refresh(){
+  .global refresh
+refresh:
+  ldi r20, 0 
+1:
+  cpi r20, 8 
+  brge 2f
+    // digitalWrite(CS_PIN, 0) ;
+    in r24, _SFR_IO_ADDR(PORTB)
+    andi r24, 0b11111011
+    out _SFR_IO_ADDR(PORTB), r24
+    mov r24, r20
+    ldi r22, 0
+    push r20
+    call send_row
+    pop r20
+    mov r24, r20
+    ldi r22, 8
+    push r20
+    call send_row
+    pop r20
+    // digitalWrite(CS_PIN, 1) ;
+    in r24, _SFR_IO_ADDR(PORTB)
+    ori r24, 0b00000100
+    out _SFR_IO_ADDR(PORTB), r24
+    inc r20 
+    rjmp 1b
+2:
+  ret
+
 
 
 ; void send_row(byte r24, byte r22)
